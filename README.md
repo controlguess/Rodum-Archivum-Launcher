@@ -1,4 +1,19 @@
-# Archivum-Launcher
+# Rodum-Launcher
+Rodum is a fork of Archivium that was completely edited to install and run on the following operating systems:
+Fedora Workstation
+Nobara (very likely)
+Rocky Linux / AlmaLinux (with EPEL)
+Bazzite / Silverblue (with caveats)
+
+Info about immutable distros (like Silverblue / Bazzite)
+These don’t allow normal dnf install in the same way.
+👉 On those, users would need:
+rpm-ostree install wine
+OR use a container (like Toolbox)
+
+Your script will fail there unless adapted
+
+# About Archivum
 Archivum Launcher is a compatibility layer for playing classic Roblox clients on Linux. It simplifies running historical
 Roblox versions from 2007-2009 by automating Wine setup, dependencies, and client downloads for enthusiasts and preservationists.
 
