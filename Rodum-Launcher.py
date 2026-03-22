@@ -1,3 +1,15 @@
+# ▗▄▄▖  ▗▄▖ ▗▄▄▄ ▗▖ ▗▖▗▖  ▗▖
+# ▐▌ ▐▌▐▌ ▐▌▐▌  █▐▌ ▐▌▐▛▚▞▜▌
+# ▐▛▀▚▖▐▌ ▐▌▐▌  █▐▌ ▐▌▐▌  ▐▌
+# ▐▌ ▐▌▝▚▄▞▘▐▙▄▄▀▝▚▄▞▘▐▌  ▐▌
+# Fedora Workstation
+# Nobara
+# Rocky Linux / AlmaLinux (with EPEL)
+# Bazzite / Silverblue
+
+
+
+
 import subprocess
 import os
 import sys
@@ -32,7 +44,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.title("Archivum Launcher")
+        self.title("Rodum Launcher - Fedora")
         self.geometry("450x450")
         self.create_widgets()
         # Set the default version
@@ -47,7 +59,7 @@ class App(tk.Tk):
         main_frame = ttk.Frame(self, padding="20")
         main_frame.pack(expand=True, fill="both")
 
-        title_label = ttk.Label(main_frame, text="Archivum Launcher", font=("Helvetica", 16, "bold"))
+        title_label = ttk.Label(main_frame, text="Rodum Launcher", font=("Helvetica", 16, "bold"))
         title_label.pack(pady=10)
 
         # Version selection
@@ -142,53 +154,42 @@ class App(tk.Tk):
 
     def install_sequence(self):
         self.set_status("Starting full installation...")
-        
-        # Step 1: Remove old Wine & Winetricks
-        if not self.run_command("sudo apt purge wine -y", "Removing old Wine"): return
-        if not self.run_command("sudo apt remove winetricks -y", "Removing old Winetricks"): return
-        
-        # Step 2: Add WineHQ repo and install
-        if not self.run_command(
-            "sudo dpkg --add-architecture i386 && "
-            "sudo mkdir -pm755 /etc/apt/keyrings && "
-            "sudo wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && "
-            "sudo wget -O /etc/apt/sources.list.d/winehq-jammy.sources https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources",
-            "Adding WineHQ repository"
-        ): return
-        
-        if not self.run_command("sudo apt update", "Updating repositories"): return
-        if not self.run_command("sudo apt install --install-recommends winehq-stable -y", "Installing WineHQ stable"): return
-        
-        # Step 3: Install updated Winetricks
-        if not self.run_command(
-            "cd ~ && wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks && "
-            "chmod +x winetricks && sudo mv winetricks /usr/local/bin",
-            "Installing updated Winetricks"
-        ): return
 
-        # Step 4: Create 32-bit Wine prefix
+        # Step 1: Remove old Wine & Winetricks
+        if not self.run_command("sudo dnf remove wine\\* -y", "Removing old Wine"): return
+        if not self.run_command("sudo dnf remove winetricks -y", "Removing old Winetricks"): return
+
+        # Step 2: Install Wine + Winetricks (Fedora native)
+        if not self.run_command("sudo dnf install wine winetricks -y", "Installing Wine & Winetricks"): return
+
+        # Step 3: Create fresh 32-bit Wine prefix
         wine_prefix_path = os.path.expanduser(f"~/{WINE_PREFIX_NAME}")
+
         if os.path.exists(wine_prefix_path):
             self.set_status("Removing old Wine prefix...", "orange")
-            self.run_command(f"rm -r {wine_prefix_path}", "Removing old prefix")
-        
-        os.environ['WINEARCH'] = 'win32'
+            if not self.run_command(f"rm -rf \"{wine_prefix_path}\"", "Removing old prefix"): return
+
+        os.environ['WINEARCH'] = 'win64'
         os.environ['WINEPREFIX'] = wine_prefix_path
+        
+        if not self.run_command("sudo dnf install wine.i686 -y", "Getting 32-bit Wine support for Rodum"): return
+
         if not self.run_command("winecfg", "Initializing new Wine prefix"): return
-        
-        # Step 5: Install core dependencies
-        if not self.run_command(f"winetricks vcrun2005", "Installing vcrun2005"): return
-        if not self.run_command(f"winetricks vcrun2008", "Installing vcrun2008"): return
-        if not self.run_command(f"winetricks vcrun2010", "Installing vcrun2010"): return
-        
-        # Step 6: Install IE, DirectX and other components to fix navigation and rendering errors
-        if not self.run_command(f"winetricks ie8", "Installing Internet Explorer 8"): return
-        if not self.run_command(f"winetricks corefonts", "Installing core fonts"): return
-        if not self.run_command(f"winetricks d3dx9", "Installing DirectX 9"): return
-        if not self.run_command(f"winetricks d3dcompiler_43", "Installing DirectX Shader Compiler"): return
+
+        # Step 4: Install dependencies via Winetricks
+        if not self.run_command("winetricks -q vcrun2005", "Installing vcrun2005"): return
+        if not self.run_command("winetricks -q vcrun2008", "Installing vcrun2008"): return
+        if not self.run_command("winetricks -q vcrun2010", "Installing vcrun2010"): return
+
+        if not self.run_command("winetricks -q corefonts", "Installing core fonts"): return
+        if not self.run_command("winetricks -q d3dx9", "Installing DirectX 9"): return
+        if not self.run_command("winetricks -q d3dcompiler_43", "Installing shader compiler"): return
+
+        # IE8 is optional but sometimes needed for old Roblox clients
+        if not self.run_command("winetricks -q ie8", "Installing Internet Explorer 8"): return
 
         self.set_status("Installation complete! You can now Play.", "green")
-
+    
     def run_play(self):
         selected_version = self.version_var.get()
         if not selected_version:
@@ -231,7 +232,9 @@ class App(tk.Tk):
         credits_text.pack(expand=True, fill="both", padx=20, pady=20)
 
         credits_content = """
-**Archivum Launcher**
+**Rodum Launcher**
+Originally archivium launcher, edited for Fedora
+Heres archiviums credits
 Developed and licensed by: Stormwindsky
 License: GNU General Public License v3.0
 
